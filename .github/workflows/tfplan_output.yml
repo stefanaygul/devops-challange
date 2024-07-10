@@ -1,0 +1,50 @@
+# Pensa Terraform Tests for PRs
+
+name: Terraform Env Codebuild Tests
+env: 
+  CONFIG_DIRECTORY: "./"
+
+on:
+  push:
+    branches:
+      - '**'
+    paths:
+      - '**'    
+  workflow_dispatch:
+
+jobs:
+  test_env_codebuild:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone DevOps Repo
+        uses: actions/checkout@v4
+        with: 
+          fetch-depth: 0
+          
+      - name: Set Branch
+        run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+
+      - name: Get Terraform required version
+        run: |
+          cd $GITHUB_WORKSPACE/terraform/$SERVICE
+          echo "terraform_version=$($GITHUB_WORKSPACE/$BUILD_TF required_version)" >> $GITHUB_ENV
+          echo "Terraform Version set to $(grep terraform_version $GITHUB_ENV | awk -F= '{print $2}')" 
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.terraform_version }}
+
+      - name: Terraform Format (for code validations)
+        run: |
+         cd terraform
+         terraform fmt --recursive
+
+      - name: Terraform Plan
+        env: 
+          ENV: ${{ matrix.envs }}
+        run: |
+         cd $GITHUB_WORKSPACE/terraform/$SERVICE
+         # Kludgey way to not assume the writeable config role
+         TF_ROLE_FILE=$(grep -l ' role_arn.*=.*"arn:' *.tf)
+         sed -i 's/ role_arn/ #role_arn/' $TF_ROLE_FILE
+         $GITHUB_WORKSPACE/$BUILD_TF -i $ENV plan
