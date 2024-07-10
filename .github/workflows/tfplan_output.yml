@@ -1,6 +1,6 @@
 # Pensa Terraform Tests for PRs
 
-name: Terraform Env Codebuild Tests
+name: Devops Challange Plan
 env: 
   CONFIG_DIRECTORY: "./"
 
@@ -24,27 +24,23 @@ jobs:
       - name: Set Branch
         run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
 
-      - name: Get Terraform required version
-        run: |
-          cd $GITHUB_WORKSPACE/terraform/$SERVICE
-          echo "terraform_version=$($GITHUB_WORKSPACE/$BUILD_TF required_version)" >> $GITHUB_ENV
-          echo "Terraform Version set to $(grep terraform_version $GITHUB_ENV | awk -F= '{print $2}')" 
-
       - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.terraform_version }}
 
-      - name: Terraform Format (for code validations)
-        run: |
-         cd terraform
-         terraform fmt --recursive
-
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+        
+      - name: Terraform Init
+        id: init
+        run: terraform init
+        
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+        
       - name: Terraform Plan
-        env: 
-          ENV: ${{ matrix.envs }}
-        run: |
-         cd $GITHUB_WORKSPACE/terraform/$SERVICE
-         # Kludgey way to not assume the writeable config role
-         TF_ROLE_FILE=$(grep -l ' role_arn.*=.*"arn:' *.tf)
-         sed -i 's/ role_arn/ #role_arn/' $TF_ROLE_FILE
-         $GITHUB_WORKSPACE/$BUILD_TF -i $ENV plan
+        id: plan
+        run: terraform plan -no-color
+        continue-on-error: true
+
