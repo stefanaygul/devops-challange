@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  test_env_codebuild:
+  terraform:
     runs-on: ubuntu-latest
     steps:
       - name: Clone DevOps Repo
@@ -21,26 +21,50 @@ jobs:
         with: 
           fetch-depth: 0
           
-      - name: Set Branch
-        run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
+      # - name: Set Branch
+      #   run: echo "BRANCH=$(echo $GITHUB_REF | cut -d'/' -f 3)" >> $GITHUB_ENV
 
       - uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform fmt
-        id: fmt
-        run: terraform fmt -check
-        continue-on-error: true
+      - name: Set Environment Variables
+        run: |
+          if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
+            echo "TF_VAR_ENV=dev" >> $GITHUB_ENV
+            echo "WORKING_DIRECTORY=./terraform-project/dev" >> $GITHUB_ENV
+            echo "TFVARS_FILE=dev.tfvars" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF##*/}" == "staging" ]]; then
+            echo "TF_VAR_ENV=staging" >> $GITHUB_ENV
+            echo "WORKING_DIRECTORY=./terraform-project/staging" >> $GITHUB_ENV
+            echo "TFVARS_FILE=staging.tfvars" >> $GITHUB_ENV
+          elif [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            echo "TF_VAR_ENV=prod" >> $GITHUB_ENV
+            echo "WORKING_DIRECTORY=./terraform-project/prod" >> $GITHUB_ENV
+            echo "TFVARS_FILE=prod.tfvars" >> $GITHUB_ENV
+          fi
+
+      # - name: Terraform fmt
+      #   id: fmt
+      #   run: terraform fmt -check
+      #   continue-on-error: true
         
+      # - name: Terraform Init
+      #   id: init
+      #   run: terraform init
+        
+      # - name: Terraform Validate
+      #   id: validate
+      #   run: terraform validate -no-color
+        
+      # - name: Terraform Plan
+      #   id: plan
+      #   run: terraform plan -no-color
+      #   continue-on-error: true
+
       - name: Terraform Init
-        id: init
         run: terraform init
-        
-      - name: Terraform Validate
-        id: validate
-        run: terraform validate -no-color
-        
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+
       - name: Terraform Plan
-        id: plan
-        run: terraform plan -no-color
-        continue-on-error: true
+        run: terraform plan -var-file="${{ env.TFVARS_FILE }}" -out=plan.out
+        working-directory: ${{ env.WORKING_DIRECTORY }}
 
