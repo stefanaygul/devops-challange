@@ -1,4 +1,4 @@
-#T erraform Deployment
+# Terraform Deployment
 
 This guide provides instructions for manually deploying the Terraform configurations for the `dev`, `staging`, and `prod` environments.
 
