@@ -28,7 +28,7 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          if [[ "${GITHUB_REF##*/}" == "dev" ]]; then
+          if [[ "${GITHUB_REF##*/}" == "develop" ]]; then
             echo "TF_VAR_ENV=dev" >> $GITHUB_ENV
             echo "WORKING_DIRECTORY=./devops-challange/dev" >> $GITHUB_ENV
             echo "TFVARS_FILE=dev.tfvars" >> $GITHUB_ENV
