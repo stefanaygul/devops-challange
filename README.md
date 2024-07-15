@@ -1,4 +1,4 @@
-# Terraform Deployment
+#T erraform Deployment
 
 This guide provides instructions for manually deploying the Terraform configurations for the `dev`, `staging`, and `prod` environments.
 
@@ -6,14 +6,15 @@ This guide provides instructions for manually deploying the Terraform configurat
 
 1. Clone the repository:
 
-   ```
+```
    git clone https://github.com/stefanaygul/devops-challange.git
    cd devops-challange
-   ```
+```
 
-2. ```
+2. Terraform Plan and Apply
+```
     cd <env> like dev/
     terraform init
     terraform plan -var-file="dev.tfvars" -out=dev-plan.out
     terraform apply "dev-plan.out"
-    ```
+```
